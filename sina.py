@@ -7,15 +7,20 @@ import os
 
 MAX_PAGENUM = 1000
 
-def is_interested(url):
+def is_interested(url,sources):
     #source = ['blog','vr','news','fashion','baby','edu','kaoshi','jiaju','eladies','dj','games','app','tech','zhongce','book','finance','sports']
-    source = ['news']
-    return hasattr(url,'startswith') and any(map(lambda x:url.startswith(x),map(lambda title:'http://'+title,source)))
+    #source = ['news']
+    #return hasattr(url,'startswith') and any(map(lambda x:url.startswith(x),map(lambda title:'http://'+title,source)))
+    return isinstance(url,str) and any(map(lambda x:x in url,sources))
 
-def ishan(text):
-    return any('\u4e00' <= char <= '\u9fff' for char in text)
+def get_type(url, sources):
+    for source in sources:
+        if source in url:
+            return source
+    return None
 
 def islegal_title(title):
+    ishan = lambda text:any('\u4e00' <= char <= '\u9fff' for char in text)
     return all(map(lambda ch:(ishan(ch) or ch.isprintable()) and ch != '�' and ch != '/',title))
 
 def has_title(soup):
@@ -29,25 +34,35 @@ def print_title(soup):
     title = get_title(soup)
     print(title)
 
-def get_text(soup):
-    articleContent_div = soup.find('div',{'id':'articleContent'})
-    paragraphs = articleContent_div.findAll('p')
-    text = ''
-    for paragraph in paragraphs:
-        text += paragraph.text
-    return text
-
-def isnews(soup):
-    articleContent_div = soup.find('div',{'id':'articleContent'})
-    return False if articleContent_div is None else True
-
-def write_text(soup):
-    if isnews(soup):
+def write_text(soup,tp):
+    def get_text(soup):
+        articleContent_div = soup.find('div',{'id':'articleContent'})
+        paragraphs = articleContent_div.findAll('p')
+        text = ''
+        for paragraph in paragraphs:
+            text += paragraph.text
+        return text
+    def isnews(soup):
+        articleContent_div = soup.find('div',{'id':'articleContent'})
+        return False if articleContent_div is None else True
+    path = '/'.join([os.getcwd(),tp,title])
+    if isnews(soup) and not os.path.exist(path):
         title = get_title(soup)
-        fd = open('news/'+title,'w+')
+        fd = open(path,'w+')
         fd.write(get_text(soup))
         print_title(soup)
         fd.close()
+
+def makedir(sources):
+    pwd,dirlist = os.getcwd(),os.listdir()
+    for source in sources:
+        if not (os.path.exists(pwd+'/'+source) and os.path.isdir(pwd+'/'+source)):
+            os.makedirs(pwd+'/'+source)
+
+def deal_with_url(url):
+    if url.startswith('/n') or url.startswith(' '):
+        return deal_with_url(url[1:])
+    return url
 
 def requests_get(url):
     USER_AGENTS = (
@@ -77,6 +92,8 @@ def requests_get(url):
 req = requests_get('http://www.sina.com.cn')
 req.encoding = 'utf-8'
 
+sources = ['news','finance','tech','sports','ent','auto','blog','house','fashion','games']
+makedir(sources)
 
 titles = set()
 queue = queue.Queue()
@@ -86,7 +103,11 @@ while not queue.empty() or len(titles) >= MAX_PAGENUM:
     bsObj = BeautifulSoup(html,'lxml')
     for link in bsObj.find_all('a'):
         url = link.get('href')
-        if is_interested(url):
+        if url == None:
+            continue
+        url = deal_with_url(url)
+        if is_interested(url,sources):
+            tp = get_type(url,sources)
             r = requests_get(url)
             if r == None or r.status_code != 200:
                 continue
@@ -97,5 +118,5 @@ while not queue.empty() or len(titles) >= MAX_PAGENUM:
             title = get_title(soup)
             if islegal_title(title) and title not in titles:
                 queue.put(r.text)
-                write_text(soup)
+                write_text(soup,tp)
                 titles.add(title)
