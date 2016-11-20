@@ -5,12 +5,9 @@ import queue
 import sys
 import os
 
-MAX_PAGENUM = 1000
+MAX_PAGENUM = 10000
 
 def is_interested(url,sources):
-    #source = ['blog','vr','news','fashion','baby','edu','kaoshi','jiaju','eladies','dj','games','app','tech','zhongce','book','finance','sports']
-    #source = ['news']
-    #return hasattr(url,'startswith') and any(map(lambda x:url.startswith(x),map(lambda title:'http://'+title,source)))
     return isinstance(url,str) and any(map(lambda x:x in url,sources))
 
 def get_type(url, sources):
@@ -31,38 +28,48 @@ def get_title(soup):
     return title.split('|')[0]
 
 def print_title(soup):
-    title = get_title(soup)
-    print(title)
+    print(get_title(soup))
 
-def write_text(soup,tp):
+def write_text(soup,path):
     def get_text(soup):
-        articleContent_div = soup.find('div',{'id':'articleContent'})
-        paragraphs = articleContent_div.findAll('p')
+        div = soup.find('div',{'id':'articleContent'})
+        if div is None:
+        	div = soup.find('div',{'id':'artibody'})
+        paragraphs = div.findAll('p')
         text = ''
         for paragraph in paragraphs:
             text += paragraph.text
         return text
     def isnews(soup):
         articleContent_div = soup.find('div',{'id':'articleContent'})
-        return False if articleContent_div is None else True
-    path = '/'.join([os.getcwd(),tp,title])
-    if isnews(soup) and not os.path.exist(path):
+        artibody_div = soup.find('div',{'id':'artibody'})
+        return articleContent_div != None or artibody_div != None
+    if isnews(soup) and not os.path.exists(path):
         title = get_title(soup)
         fd = open(path,'w+')
         fd.write(get_text(soup))
         print_title(soup)
         fd.close()
 
-def makedir(sources):
+def makedirs(sources):
     pwd,dirlist = os.getcwd(),os.listdir()
     for source in sources:
         if not (os.path.exists(pwd+'/'+source) and os.path.isdir(pwd+'/'+source)):
             os.makedirs(pwd+'/'+source)
 
 def deal_with_url(url):
-    if url.startswith('/n') or url.startswith(' '):
+    if url != None and (url.startswith('/n') or url.startswith(' ')):
         return deal_with_url(url[1:])
     return url
+
+def is_legal_url(url):
+    return url != None and url.startswith('http://')
+
+def is_in_sina(url):
+	return url != None and 'sina' in url
+
+def is_filter_sources(url,sources):
+	return any(map(lambda x:x in url,filter_sources))
 
 def requests_get(url):
     USER_AGENTS = (
@@ -89,34 +96,27 @@ def requests_get(url):
     return r
 
 
-req = requests_get('http://www.sina.com.cn')
-req.encoding = 'utf-8'
-
-sources = ['news','finance','tech','sports','ent','auto','blog','house','fashion','games']
-makedir(sources)
-
-titles = set()
+#titles = init_titles()
+sources = ['news','finance','tech','baby','sports','ent','auto','games']
+filter_sources = ['tag','blog','fashion','slide','house','video','vip','vr','bbs','club','help','apk']
+makedirs(sources)
+init_url = 'http://www.sina.com.cn'
+urls = set()
 queue = queue.Queue()
-queue.put(req.text)
-while not queue.empty() or len(titles) >= MAX_PAGENUM:
-    html = queue.get()
-    bsObj = BeautifulSoup(html,'lxml')
-    for link in bsObj.find_all('a'):
-        url = link.get('href')
-        if url == None:
-            continue
-        url = deal_with_url(url)
-        if is_interested(url,sources):
-            tp = get_type(url,sources)
-            r = requests_get(url)
-            if r == None or r.status_code != 200:
-                continue
-            r.encoding = 'utf-8'
-            soup = BeautifulSoup(r.text,'lxml')
-            if not has_title(soup):
-                continue
-            title = get_title(soup)
-            if islegal_title(title) and title not in titles:
-                queue.put(r.text)
-                write_text(soup,tp)
-                titles.add(title)
+queue.put(init_url)
+while not queue.empty() or len(urls) >= MAX_PAGENUM:
+    source_url = queue.get()
+    print(source_url)
+    r = requests_get(source_url)
+    if r != None and r.status_code == 200:
+    	r.encoding = 'utf-8'
+    	bsObj = BeautifulSoup(r.text,'lxml')
+    	for link in bsObj.find_all('a'):
+    		url = deal_with_url(link.get('href'))
+    		if is_legal_url(url) and url not in urls:
+    			urls.add(url)
+    			if is_in_sina(url) and not is_filter_sources(url,sources):
+    				queue.put(url)
+    				#print(url,source_url)
+    	if get_type(source_url,sources) != None and has_title(bsObj) and islegal_title(get_title(bsObj)) and is_interested(source_url,sources):
+    		write_text(bsObj,'/'.join([os.getcwd(),get_type(source_url,sources),get_title(bsObj)]))
