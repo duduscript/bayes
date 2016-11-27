@@ -5,10 +5,8 @@ import queue
 import sys
 import os
 
-MAX_PAGENUM = 10000
-
 def is_interested(url,sources):
-    return isinstance(url,str) and any(map(lambda x:x in url,sources))
+    return isinstance(url,str) and any(map(lambda x:url.startswith('http://'+x),sources))
 
 def get_type(url, sources):
     for source in sources:
@@ -25,16 +23,19 @@ def has_title(soup):
 
 def get_title(soup):
     title = soup.title.text
-    return title.split('|')[0]
+    if title != None:
+        return title.split('|')[0]
+    title = soup.find('h1',{'id':'artibodyTitle'})
+    return title.text
 
 def print_title(soup):
     print(get_title(soup))
 
 def write_text(soup,path):
     def get_text(soup):
-        div = soup.find('div',{'id':'articleContent'})
+        div = soup.find('div',{'id':'artibody'})
         if div is None:
-        	div = soup.find('div',{'id':'artibody'})
+        	div = soup.find('div',{'id':'articleContent'})
         paragraphs = div.findAll('p')
         text = ''
         for paragraph in paragraphs:
@@ -93,30 +94,34 @@ def requests_get(url):
     except requests.exceptions.ConnectionError:
         #r.status_code = "Cinnection refused!"
         print('Connection refused!')
+    except requests.exceptions.ChunkedEncodingError:
+    	print('Connection refused!')
     return r
 
-
-#titles = init_titles()
-sources = ['news','finance','tech','baby','sports','ent','auto','games']
-filter_sources = ['tag','blog','fashion','slide','house','video','vip','vr','bbs','club','help','apk']
-makedirs(sources)
-init_url = 'http://www.sina.com.cn'
-urls = set()
-queue = queue.Queue()
-queue.put(init_url)
-while not queue.empty() or len(urls) >= MAX_PAGENUM:
-    source_url = queue.get()
-    print(source_url)
-    r = requests_get(source_url)
-    if r != None and r.status_code == 200:
-    	r.encoding = 'utf-8'
-    	bsObj = BeautifulSoup(r.text,'lxml')
-    	for link in bsObj.find_all('a'):
-    		url = deal_with_url(link.get('href'))
-    		if is_legal_url(url) and url not in urls:
-    			urls.add(url)
-    			if is_in_sina(url) and not is_filter_sources(url,sources):
-    				queue.put(url)
-    				#print(url,source_url)
-    	if get_type(source_url,sources) != None and has_title(bsObj) and islegal_title(get_title(bsObj)) and is_interested(source_url,sources):
-    		write_text(bsObj,'/'.join([os.getcwd(),get_type(source_url,sources),get_title(bsObj)]))
+if __name__ == '__main__':
+    #titles = init_titles()
+    sources = ['edu','health','finance','tech','baby','sports','mil','ent','auto','games','news']
+    filter_sources = ['mid','download','tag','app','weather','blog','db','fashion','slide','house','video','vip','vr','bbs','club','help','apk']
+    makedirs(sources)
+    init_url = 'http://www.sina.com.cn'
+    urls = set()
+    queue = queue.Queue()
+    queue.put(init_url)
+    while not queue.empty():
+        source_url = queue.get()
+        print(source_url)
+        r = requests_get(source_url)
+        if r != None and r.status_code == 200:
+            r.encoding = 'utf-8'
+            bsObj = BeautifulSoup(r.text,'lxml')
+            for link in bsObj.find_all('a'):
+                url = deal_with_url(link.get('href'))
+                if url not in urls:
+                    urls.add(url)
+                    if is_legal_url(url) and is_in_sina(url) and is_interested(url,sources):
+                        queue.put(url)
+            if get_type(source_url,sources) != None \
+            and has_title(bsObj) \
+            and islegal_title(get_title(bsObj)) \
+            and is_interested(source_url,sources):
+                write_text(bsObj,'/'.join([os.getcwd(),get_type(source_url,sources),get_title(bsObj)]))
