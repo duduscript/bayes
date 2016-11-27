@@ -23,16 +23,20 @@ class Model(object):
                 self.prior_prob[source] /= count
         def train_type_model():
             for source in self.sources:
-                 type_dict = util.get_type_dict(source)
-                 for word in type_dict:
-                     type_dict[word] /= get_data_num(source)
+                 dic = __import__(source).dic
+                 self.type_model[source] = dic
         train_prior_prob()
         train_type_model()
     def classify(self,vec):
         pass
 
+
+'''
 if __name__ == '__main__':
     model = Model()
     model.train()
     print(model.get_prior_prob())
-    print(model.get_type_model())
+    dic = model.get_type_model()
+    for source in dic:
+        print(source,len(dic[source]))
+'''

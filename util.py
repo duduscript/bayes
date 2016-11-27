@@ -2,15 +2,6 @@ import os
 import jieba
 import re
 
-def singleton(cls, *args, **kw):
-    instances = {}
-    def _singleton():
-        if cls not in instances:
-            instances[cls] = cls(*args, **kw)
-        return instances[cls]
-    return _singleton
-
-@singleton
 class Util(object):
 	"""docstring for ."""
 	def __init__(self):
