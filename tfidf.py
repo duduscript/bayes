@@ -17,7 +17,8 @@ class TfIdf(object):
         para_dict = self.util.get_dict_from_paragraph(paragraph)
         return para_dict[word]/max(para_dict.values()) if word in para_dict else 0
     def get_word_idf(self,word):
-        return math.log(self.doc_num/(self.dic[word]+1))
+        word_num = self.dic[word] if word in self.dic else 0
+        return math.log(self.doc_num/(word_num+1))
     def get_word_tfidf(self,word,paragraph):
         return self.get_word_tf(word,paragraph)*self.get_word_idf(word)
     def paragraph2vec(self,paragraph):
@@ -27,6 +28,14 @@ class TfIdf(object):
             word_tfidf[word] = self.get_word_tfidf(word,paragraph)
         return sorted(word_tfidf.keys(),key=lambda x:word_tfidf[x])[:30]
 
+
+
+def get_dic():
+	util = Util()
+	for source in util.sources:
+		os.system('python3 test.py '+source+' > '+source+'.py')
+		dic = __import__(source).dic
+		print(source,len(dic))
 
 '''
 if __name__ == '__main__':

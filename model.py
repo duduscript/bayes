@@ -1,6 +1,7 @@
 import util
 import os
 import tfidf
+import time
 
 def singleton(cls, *args, **kw):
     instances = {}
@@ -16,7 +17,7 @@ class Model(object):
     def __init__(self):
         self.prior_prob = {}
         self.type_model = {}
-        self.sources = ['edu','health','finance','tech','baby','sports','mil','ent','auto','games','news']
+        self.sources = ['edu','finance','tech','sports','mil','ent','auto','games']
         self.train()
     def get_prior_prob(self):
         return self.prior_prob
@@ -40,7 +41,7 @@ class Model(object):
         train_type_model()
     def classify(self,vec):
         def get_prob(vec,source):
-            smooth_prob = 0.0001
+            smooth_prob = 0.001
             prob = self.prior_prob[source]
             for word in vec:
                 if word not in self.type_model[source]:
