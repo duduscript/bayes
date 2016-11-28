@@ -1,6 +1,7 @@
 import os
 import jieba
 import re
+import load
 
 class Util(object):
 	"""docstring for ."""
@@ -26,6 +27,17 @@ class Util(object):
 			for word in word_set:
 				dic[word] = dic[word]+1 if word in dic else 1
 		return dic
+	def get_dict_from_paragraph(self,paragraph):
+		dictionary = load.Dictionary().getDic()
+		para_dict,sentences = {},filter(lambda x:len(x) and x in dictionary,re.split('，|。|：|；|　| |,|/.|;| |\n|/?',paragraph))
+		for sentence in sentences:
+			words = jieba.cut(sentence, cut_all=False)
+			for w in words:
+				if w in para_dict:
+					para_dict[w] += 1
+				else:
+					para_dict[w] = 1
+		return para_dict
 	def get_type_paragraphs(self,type):
 		path = os.getcwd() + '/' + type
 		if not os.path.exists(path):
@@ -36,7 +48,18 @@ class Util(object):
 				yield file.read()
 
 if __name__ == '__main__':
+	'''
 	util = Util()
+	all_dic = {}
 	for source in util.get_sources():
 		dic = __import__(source).dic
-		print(source,len(dic))
+		for word in dic:
+			if word in all_dic:
+				all_dic[word] += dic[word]
+			else:
+				all_dic[word] = dic[word]
+	print('dic = ',end='')
+	print(all_dic,end='')
+	'''
+	dic = __import__('dict').dic
+	print(len(dic))

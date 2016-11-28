@@ -1,5 +1,6 @@
-import baby
+import model
+import sys
+import util
 
 if __name__ == '__main__':
-	baby = baby.baby
-	print(len(baby))
+	pass
