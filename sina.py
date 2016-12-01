@@ -100,7 +100,7 @@ def requests_get(url):
 
 if __name__ == '__main__':
     #titles = init_titles()
-    sources = ['edu','health','finance','tech','baby','sports','mil','ent','auto','games','news']
+    sources = ['edu','health','finance','tech','baby','sports','mil','ent','auto','games']
     filter_sources = ['mid','download','tag','app','weather','blog','db','fashion','slide','house','video','vip','vr','bbs','club','help','apk']
     makedirs(sources)
     init_url = 'http://www.sina.com.cn'
