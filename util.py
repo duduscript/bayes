@@ -7,7 +7,7 @@ class Util(object):
 	"""docstring for ."""
 	def __init__(self):
 		self.type_dic = {}
-		self.sources = ['edu','finance','tech','sports','mil','ent','auto','games']
+		self.sources = ['edu','finance','tech','sports','mil','ent','auto']
 		#for source in sources:
 		#	self.type_dic[source] = self.get_type_dict(source)
 	def get_type_dic(self):
@@ -15,7 +15,8 @@ class Util(object):
 	def get_sources(self):
 		return self.sources
 	def split_paragraph(self,paragraph):
-		s,sentences = set(),filter(lambda x:len(x),re.split('，|。|：|；|　| |,|/.|;| |\n|/?|》|《|“|‘|－',paragraph))
+		s,sentences = set(),filter(lambda x:len(x) and not x.islower() and all(map(lambda c:not c.isdigit(),x)),re.split('|'.join(\
+                ['，','。','／','《','》','？','；','：','‘','’','“','”','【','】','｛','｝','\?',',','\n','（','）','　',' ','@','＠','-','－','!','！']),paragraph))
 		for sentence in sentences:
 			words = jieba.cut(sentence, cut_all=False)
 			s |= set(words)
@@ -47,6 +48,7 @@ class Util(object):
 			with open(path + '/' + file_path,'r') as file:
 				yield file.read()
 
+'''
 if __name__ == '__main__':
 	util = Util()
 	all_dic = {}
@@ -60,3 +62,4 @@ if __name__ == '__main__':
 				all_dic[word] = dic[word]
 	print('dic = ', end='')
 	print(all_dic, end='\n')
+'''

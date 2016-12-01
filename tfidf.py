@@ -26,9 +26,8 @@ class TfIdf(object):
         word_tfidf = {}
         for word in words:
             word_tfidf[word] = self.get_word_tfidf(word,paragraph)
-        return sorted(word_tfidf.keys(),key=lambda x:word_tfidf[x])[:30]
-
-
+        keywords = sorted(word_tfidf.keys(),key=lambda x:word_tfidf[x])
+        return keywords[:len(keywords)//4]
 
 def get_dic():
 	util = Util()

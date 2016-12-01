@@ -17,7 +17,7 @@ class Model(object):
     def __init__(self):
         self.prior_prob = {}
         self.type_model = {}
-        self.sources = ['edu','finance','tech','sports','mil','ent','auto','games']
+        self.sources = ['edu','finance','tech','sports','mil','ent','auto']
         self.train()
     def get_prior_prob(self):
         return self.prior_prob
@@ -61,8 +61,19 @@ if __name__ == '__main__':
     tfidf = tfidf.TfIdf()
     model = Model()
     paras = os.listdir('test')
-    for para in paras:
-        with open('/'.join([os.getcwd(),'test',para])) as p:
-            print(para)
-            text = p.read()
-            print(model.classify(tfidf.paragraph2vec(text)))
+    #print(paras)
+    count,right = 0,0
+    for source in model.sources:
+        if source in paras:
+            papers = os.listdir('test/'+source)
+            for paper in papers:
+                with open('/'.join(['test',source,paper])) as file:
+                    vec = tfidf.paragraph2vec(file.read())
+                    if len(vec) < 10:continue
+                    print(vec)
+                    result = model.classify(vec)
+                    if result == source:right += 1
+                    count += 1
+        print(count,right)
+    print('----------------------')
+    print(count,right)
